@@ -12,7 +12,6 @@ NODE  = "camera"
 RES   = (640, 480)
 FPS   = 50
 
-
 # Class to process camera messages
 class Stream(object):
 
@@ -20,7 +19,12 @@ class Stream(object):
     def write(self, data):
         
         # Create an image instance and publish
-        img = Image(width=RES[0], height=RES[1], data=data[:(RES[0] * RES[1])])
+        img = Image()
+        img.width = RES[0]
+        img.height = RES[1]
+        img.encoding = "yuv422"
+        img.step = RES[0]
+        img.data = data[:(RES[0] * RES[1])]
         
         pub.publish(img)
         
@@ -32,7 +36,7 @@ if __name__ == "__main__":
 
     # Set up node using NODENAME
     # Anonymous makes sure the node has a unique name by adding numbers to it
-    rospy.init_node(NODE, anonymous=True)
+    rospy.init_node(NODE)
 
     # Start capturing camera images
     with picamera.PiCamera() as camera:
@@ -40,7 +44,9 @@ if __name__ == "__main__":
         camera.framerate = FPS
         camera.start_recording(Stream(), format='yuv')
         
-        while True:
-            camera.wait_recording(1)
+        try:
+            while True:
+                camera.wait_recording(1)
+        except rospy.ROSInterruptException:
+            camera.stop_recording()
         
-        camera.stop_recording()

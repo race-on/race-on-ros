@@ -5,7 +5,7 @@
 
 import rospy
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import Pose
 
 # Dependencies for estimation
 import numpy as np
@@ -17,27 +17,32 @@ class PosEstimator():
         self.topic_name_camera = rospy.get_param("~topic_name_camera", "/camera")
         self.topic_name_pos = rospy.get_param("~topic_name_position", "/position")
         self.frame_name = rospy.get_param("~frame_name", "camera")
-        self.camera_width = rospy.get_param("~camera_width", 640)
-        self.camera_height = rospy.get_param("~camera_height", 480)
         
         # Parameters for estimation
         self.scan_line = rospy.get_param("~scan_line", 170)
         self.peak_thres = rospy.get_param("~peak_threshold", 170)
         self.track_width = rospy.get_param("~track_width", 600)
-        self.camera_center = self.camera_width // 2
+        self.camera_center = rospy.get_param("~camera_center", 320)
         
         self.butter_b, self.butter_a = butter(3, 0.1)
     
     def start(self):
         self.sub_camera = rospy.Subscriber(self.topic_name_camera, Image, self.camera_callback)
-        self.pub_pos = rospy.Publisher(self.topic_name_pos, Pose2D, queue_size=10)
+        self.pub_pos = rospy.Publisher(self.topic_name_pos, Pose, queue_size=10)
         rospy.spin()
 
     def camera_callback(self, img_msg):
-        I = np.array(img_msg.data)
-        line_pos = self.pos_estimate(I)
+        width = img_msg.width
+        height = img_msg.height
         
-        pos_msg = Pose2D()
+        I = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((width, height))
+        
+        rospy.loginfo("Image with shape " + str(I.shape) + " received.")        
+        line_pos = self.camera_center - self.pos_estimate(I)
+        
+        rospy.loginfo("Estimated line_pos = " + str(line_pos))
+        
+        pos_msg = Pose()
         pos_msg.position.x = line_pos
         self.pub_pos.publish(pos_msg)
         
@@ -52,6 +57,7 @@ class PosEstimator():
         # Find peaks which are higher than 0.5
         peaks, p_val = find_peaks(Lf, height=self.peak_thres)
 
+        line_pos    = self.camera_center
         line_left   = None
         line_right  = None
         peaks_left  = peaks[peaks < self.camera_center]
