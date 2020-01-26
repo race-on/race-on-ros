@@ -14,9 +14,9 @@ from scipy.signal import find_peaks, butter, filtfilt
 class PosEstimator():
     
     def __init__(self):
-        self.topic_name_camera = rospy.get_param("~topic_name_camera", "/camera")
-        self.topic_name_pos = rospy.get_param("~topic_name_position", "/position")
-        self.frame_name = rospy.get_param("~frame_name", "camera")
+        self.topic_name_camera = rospy.get_param("topic_name_image", "camera/image")
+        self.topic_name_pos = rospy.get_param("topic_name_position", "position")
+        self.frame_name = rospy.get_param("frame_name", "camera")
         
         # Parameters for estimation
         self.scan_line = rospy.get_param("~scan_line", 170)

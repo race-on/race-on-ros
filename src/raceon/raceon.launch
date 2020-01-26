@@ -1,0 +1,29 @@
+<launch>
+    <group ns="raceon">
+        <param name="topic_name_camera_image" value="camera/image" />
+        <param name="topic_name_camera_info" value="camera/camera_info" />
+        <param name="topic_name_position" value="position" />
+        <param name="topic_name_control" value="control" />
+
+        <node pkg="raceon" name="camera" type="camera.py" output="screen">
+            <param name="~resolution/width" value="640" />
+            <param name="~resolution/height" value="480" />
+            <param name="~fps" value="30" />
+        </node>
+
+        <node pkg="raceon" name="pos_estimation" type="pos_estimation.py" output="log">
+            <param name="~scan_line" value="170" />
+            <param name="~peak_threshold" value="170" />
+            <param name="~track_width" value="500" />
+            <param name="~camera_center" value="320" />
+        </node>
+
+        <node pkg="raceon" name="control" type="control.py" output="log">
+            <param name="~motor_speed" value="100" />
+            <param name="~target" value="0" />
+            <param name="~kp" value="0.1" />
+        </node>
+
+        <node pkg="raceon" name="actuation" type="actuation.py" output="log" />
+    </group>
+</launch>

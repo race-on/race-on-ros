@@ -3,17 +3,20 @@
 
 import rospy
 from geometry_msgs.msg import Twist
+from raceon import Car
 
-# TODO
-SERVO_MIN = 0
-SERVO_MIDDLE = 512
-SERVO_MAX = 1024
+MOTOR_PIN = 0
+SERVO_PIN = 1
+SERVO_LEFT = 2000
+SERVO_RIGHT = 1000
+SERVO_MID = 1500
 
 class Actuator():
     
-    def __init__(self):
-        self.topic_name_control = rospy.get_param("~topic_name_control", "/control")
-    
+    def __init__(self, car):
+        self.topic_name_control = rospy.get_param("topic_name_control", "control")
+        self.car = car
+        
     def start(self):
         self.sub_control = rospy.Subscriber(self.topic_name_control, Twist, self.control_callback)
         rospy.spin()
@@ -30,14 +33,19 @@ class Actuator():
     # TODO
     def drive_motor(self, motor_speed):
         rospy.loginfo("Set motor speed to: " + str(motor_speed))
+        self.car.speed(motor_speed)
 
     # TODO
     def drive_servo(self, servo_pos):
         rospy.loginfo("Set servo position to: " + str(servo_pos))
+        self.car.steer(servo_pos)
 
 if __name__ == "__main__":
+    car = Car(MOTOR_PIN, SERVO_PIN, SERVO_LEFT, SERVO_MID, SERVO_RIGHT)
+    car.enable()
+    
     rospy.init_node("actuation")
-    actuator = Actuator()
+    actuator = Actuator(car)
     try:
         actuator.start()
     except rospy.ROSInterruptException:
