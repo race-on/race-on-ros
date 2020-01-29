@@ -2,8 +2,8 @@
 # license removed for brevity
 
 import rospy
-from geometry_msgs.msg import Twist
-from raceon import Car
+from raceon.msg import AckermannDrive
+from car import Car
 
 MOTOR_PIN = 0
 SERVO_PIN = 1
@@ -18,12 +18,12 @@ class Actuator():
         self.car = car
         
     def start(self):
-        self.sub_control = rospy.Subscriber(self.topic_name_control, Twist, self.control_callback)
+        self.sub_control = rospy.Subscriber(self.topic_name_control, AckermannDrive, self.control_callback)
         rospy.spin()
 
     def control_callback(self, control_msg):
-        servo_pos = control_msg.angular.y
-        motor_speed = control_msg.linear.y
+        servo_pos = control_msg.steering_angle
+        motor_speed = control_msg.speed
         
         rospy.loginfo("Control command received: servo_pos = " + str(servo_pos) + ", motor_speed = " + str(motor_speed))
         
