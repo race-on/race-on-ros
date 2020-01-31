@@ -1,2 +1,2 @@
-int8 left
-int8 right
+int16 left
+int16 right

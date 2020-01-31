@@ -23,7 +23,7 @@ class PosEstimator():
         
         # Parameters for estimation
         self.scan_line = rospy.get_param("~scan_line", 170)
-        self.peak_thres = rospy.get_param("~peak_threshold", 170)
+        self.peak_thres = rospy.get_param("~peak_threshold", 0.7)
         self.track_width = rospy.get_param("~track_width", 600)
         self.camera_center = rospy.get_param("~camera_center", 320)
         
@@ -62,6 +62,8 @@ class PosEstimator():
 
         # Find peaks which are higher than 0.5
         peaks, p_val = find_peaks(Lf, height=self.peak_thres)
+        
+        rospy.loginfo(peaks)
 
         line_pos    = self.camera_center
         line_left   = None
@@ -79,15 +81,15 @@ class PosEstimator():
         
         # Log track position
         track_msg = TrackPosition()
-        track_msg.left = 0 if line_left == None else line_left
-        track_msg.right = 0 if line_right == None else line_right
+        track_msg.left = 0 if line_left == None else int(line_left)
+        track_msg.right = 0 if line_right == None else int(line_right)
         self.pub_pos_track.publish(track_msg)
 
         # Evaluate the line position
         if line_left and line_right:
             line_pos    = (line_left + line_right ) // 2
-            
             self.track_width = line_right - line_left
+            
         elif line_left and not line_right:
             line_pos    = line_left + int(self.track_width / 2)
             
