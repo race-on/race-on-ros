@@ -2,7 +2,8 @@
     <group ns="raceon">
         <param name="topic_name_camera_image" value="camera/image" />
         <param name="topic_name_camera_info" value="camera/camera_info" />
-        <param name="topic_name_position" value="position" />
+        <param name="topic_name_position_error" value="position/error" />
+        <param name="topic_name_position_track" value="position/track" />
         <param name="topic_name_control" value="control" />
 
         <node pkg="raceon" name="camera" type="camera.py" output="screen">

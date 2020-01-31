@@ -5,10 +5,9 @@ import rospy
 from geometry_msgs.msg import Pose
 from raceon.msg import AckermannDrive
 
-# TODO
-SERVO_MIN = 0
-SERVO_MIDDLE = 512
-SERVO_MAX = 1024
+SERVO_MIN = -900
+SERVO_MIDDLE = 0
+SERVO_MAX = 900
 
 class Controller():
     

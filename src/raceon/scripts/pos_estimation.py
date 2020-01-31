@@ -6,16 +6,19 @@
 import rospy
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Pose
+from raceon.msg import TrackPosition
 
 # Dependencies for estimation
 import numpy as np
 from scipy.signal import find_peaks, butter, filtfilt
+from skimage.color import rgb2gray
 
 class PosEstimator():
     
     def __init__(self):
         self.topic_name_camera = rospy.get_param("topic_name_image", "camera/image")
-        self.topic_name_pos = rospy.get_param("topic_name_position", "position")
+        self.topic_name_pos_err = rospy.get_param("topic_name_position_error", "position/error")
+        self.topic_name_pos_track = rospy.get_param("topic_name_position_track", "position/track")
         self.frame_name = rospy.get_param("frame_name", "camera")
         
         # Parameters for estimation
@@ -28,14 +31,17 @@ class PosEstimator():
     
     def start(self):
         self.sub_camera = rospy.Subscriber(self.topic_name_camera, Image, self.camera_callback)
-        self.pub_pos = rospy.Publisher(self.topic_name_pos, Pose, queue_size=10)
+        self.pub_pos_err = rospy.Publisher(self.topic_name_pos_err, Pose, queue_size=10)
+        self.pub_pos_track = rospy.Publisher(self.topic_name_pos_track, TrackPosition, queue_size=10)
         rospy.spin()
 
     def camera_callback(self, img_msg):
         width = img_msg.width
         height = img_msg.height
         
-        I = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((width, height))
+        img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((width, height, 3))
+        
+        I = rgb2gray(img)
         
         rospy.loginfo("Image with shape " + str(I.shape) + " received.")        
         line_pos = self.camera_center - self.pos_estimate(I)
@@ -44,7 +50,7 @@ class PosEstimator():
         
         pos_msg = Pose()
         pos_msg.position.x = line_pos
-        self.pub_pos.publish(pos_msg)
+        self.pub_pos_err.publish(pos_msg)
         
     def pos_estimate(self, I):
 
@@ -70,6 +76,12 @@ class PosEstimator():
         # Peaks on the right
         if peaks_right.size:
             line_right = peaks_right.min()
+        
+        # Log track position
+        track_msg = TrackPosition()
+        track_msg.left = 0 if line_left == None else line_left
+        track_msg.right = 0 if line_right == None else line_right
+        self.pub_pos_track.publish(track_msg)
 
         # Evaluate the line position
         if line_left and line_right:

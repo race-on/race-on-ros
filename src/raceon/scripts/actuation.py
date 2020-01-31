@@ -20,6 +20,12 @@ class Actuator():
     def start(self):
         self.sub_control = rospy.Subscriber(self.topic_name_control, AckermannDrive, self.control_callback)
         rospy.spin()
+    
+    def stop(self):
+        rospy.loginfo("Stop the car ...")
+        self.car.brake()
+        self.car.steer(0)
+        #self.car.disable()
 
     def control_callback(self, control_msg):
         servo_pos = control_msg.steering_angle
@@ -50,4 +56,4 @@ if __name__ == "__main__":
         actuator.start()
     except rospy.ROSInterruptException:
         pass
-
+    actuator.stop()
