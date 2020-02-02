@@ -40,6 +40,7 @@ class Controller():
         control_msg.steering_angle = servo_pos
         self.pub_control.publish(control_msg)
         
+    # TODO: Implement PID
     def pid(self, error):
         return error * self.kp
 

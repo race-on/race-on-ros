@@ -36,12 +36,10 @@ class Actuator():
         self.drive_motor(motor_speed)
         self.drive_servo(servo_pos)
         
-    # TODO
     def drive_motor(self, motor_speed):
         rospy.loginfo("Set motor speed to: " + str(motor_speed))
         self.car.speed(motor_speed)
 
-    # TODO
     def drive_servo(self, servo_pos):
         rospy.loginfo("Set servo position to: " + str(servo_pos))
         self.car.steer(servo_pos)
