@@ -1,20 +1,23 @@
 <launch>
     <group ns="raceon">
         <param name="topic_name_camera_image" value="camera/image" />
+        <param name="topic_name_camera_image_compressed" value="camera/image/compressed" />
         <param name="topic_name_camera_info" value="camera/camera_info" />
         <param name="topic_name_position_error" value="position/error" />
         <param name="topic_name_position_track" value="position/track" />
         <param name="topic_name_control" value="control" />
 
         <node pkg="raceon" name="camera" type="camera.py" output="screen">
+            <param name="~publish_raw" value="true" />
             <param name="~resolution/width" value="640" />
             <param name="~resolution/height" value="480" />
             <param name="~fps" value="30" />
         </node>
 
         <node pkg="raceon" name="pos_estimation" type="pos_estimation.py" output="log">
+            <param name="~use_compressed_image" value="true" />
             <param name="~scan_line" value="170" />
-            <param name="~peak_threshold" value="0.7" />
+            <param name="~peak_threshold" value="170" />
             <param name="~track_width" value="500" />
             <param name="~camera_center" value="320" />
         </node>

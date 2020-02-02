@@ -4,11 +4,12 @@
 ## to the "imu_data" topic
 
 import rospy
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from geometry_msgs.msg import Pose
 from raceon.msg import TrackPosition
 
 # Dependencies for estimation
+import cv2
 import numpy as np
 from scipy.signal import find_peaks, butter, filtfilt
 from skimage.color import rgb2gray
@@ -16,35 +17,52 @@ from skimage.color import rgb2gray
 class PosEstimator():
     
     def __init__(self):
-        self.topic_name_camera = rospy.get_param("topic_name_image", "camera/image")
+        self.topic_name_camera_image = rospy.get_param("topic_name_camera_image", "camera/image")
+        self.topic_name_camera_image_compressed = rospy.get_param("topic_name_camera_image_compressed", "camera/image/compressed")
         self.topic_name_pos_err = rospy.get_param("topic_name_position_error", "position/error")
         self.topic_name_pos_track = rospy.get_param("topic_name_position_track", "position/track")
         self.frame_name = rospy.get_param("frame_name", "camera")
         
+        # Tooglers
+        self.use_compressed_image = rospy.get_param("~use_compressed_image", True)
+        
         # Parameters for estimation
         self.scan_line = rospy.get_param("~scan_line", 170)
-        self.peak_thres = rospy.get_param("~peak_threshold", 0.7)
+        self.peak_thres = rospy.get_param("~peak_threshold", 170)
         self.track_width = rospy.get_param("~track_width", 600)
         self.camera_center = rospy.get_param("~camera_center", 320)
         
         self.butter_b, self.butter_a = butter(3, 0.1)
     
     def start(self):
-        self.sub_camera = rospy.Subscriber(self.topic_name_camera, Image, self.camera_callback)
+        
+        if self.use_compressed_image:
+            self.sub_camera = rospy.Subscriber(self.topic_name_camera_image_compressed, CompressedImage, self.image_compressed_callback)
+        else:
+            self.sub_camera = rospy.Subscriber(self.topic_name_camera_image, Image, self.image_callback)
+            
         self.pub_pos_err = rospy.Publisher(self.topic_name_pos_err, Pose, queue_size=10)
         self.pub_pos_track = rospy.Publisher(self.topic_name_pos_track, TrackPosition, queue_size=10)
         rospy.spin()
 
-    def camera_callback(self, img_msg):
+    def image_compressed_callback(self, img_msg):
+        np_arr = np.frombuffer(img_msg.data, dtype=np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        self.process_image(img)
+
+    def image_callback(self, img_msg):
         width = img_msg.width
         height = img_msg.height
         
-        img = np.frombuffer(img_msg.data, dtype=np.uint8).reshape((width, height, 3))
+        np_arr = np.frombuffer(img_msg.data, dtype=np.uint8)
+        img = np_arr.reshape((height, width, 3))
+        self.process_image(img)
+    
+    def process_image(self, img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        I = rgb2gray(img)
-        
-        rospy.loginfo("Image with shape " + str(I.shape) + " received.")        
-        line_pos = self.camera_center - self.pos_estimate(I)
+        rospy.loginfo("Image with shape {:s} received. (max, min)=({:d}, {:d})".format(str(gray.shape), gray.min(), gray.max()))        
+        line_pos = self.camera_center - self.pos_estimate(gray)
         
         rospy.loginfo("Estimated line_pos = " + str(line_pos))
         

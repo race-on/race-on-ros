@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 
 import rospy
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 
 import picamera
 import signal
+import cv2
+import numpy as np
 
 stop_process = False
 
@@ -19,25 +21,40 @@ RES = (640, 480)
 class Stream():
     
     def __init__(self):
-        topic_name_image = rospy.get_param("topic_name_camera", "camera/image")
+        self.topic_name_camera_image = rospy.get_param("topic_name_camera_image", "camera/image")
+        self.topic_name_camera_image_compressed = rospy.get_param("topic_name_camera_image_compressed", "camera/image/compressed")
+        
+        # Tooglers
+        self.publish_raw = rospy.get_param("~publish_raw", False)
+        if self.publish_raw:
+            rospy.loginfo("Publishing raw image enabled.")
     
         # Set up ros publisher to publish on img topic, using Image message
-        self.pub_img = rospy.Publisher(topic_name_image, Image, queue_size=1)
+        self.pub_img = rospy.Publisher(self.topic_name_camera_image, Image, queue_size=1)
+        self.pub_img_compressed = rospy.Publisher(self.topic_name_camera_image_compressed, CompressedImage, queue_size=1)
 
     # Called when new image is available
     def write(self, data):
+        np_arr = np.frombuffer(data, dtype=np.uint8)
+        img = np_arr.reshape((RES[1], RES[0], 3))
         
-        # Create an image instance and publish
-        img = Image()
-        img.width = RES[0]
-        img.height = RES[1]
-        img.encoding = "rgb8"
-        img.step = len(data) // RES[1]
-        img.data = data
+        # Publish compressed image
+        msg = CompressedImage()
+        msg.header.stamp = rospy.Time.now()
+        msg.format = "jpeg"
+        msg.data = np.array(cv2.imencode('.jpg', img)[1]).tobytes()
+        self.pub_img_compressed.publish(msg)
         
-        img.header.stamp = rospy.Time.now()
-        
-        self.pub_img.publish(img)
+        # Publish raw image
+        if self.publish_raw:
+            msg = Image()
+            msg.header.stamp = rospy.Time.now()
+            msg.width = RES[0]
+            msg.height = RES[1]
+            msg.encoding = "bgr8"
+            msg.step = len(data) // RES[1]
+            msg.data = data
+            self.pub_img.publish(msg)
         
 if __name__ == "__main__":
 
@@ -57,7 +74,7 @@ if __name__ == "__main__":
         camera.framerate = fps
         
         try:
-            camera.start_recording(Stream(), format='rgb')
+            camera.start_recording(Stream(), format='bgr')
             while not stop_process:
                 camera.wait_recording(1)
         except:
