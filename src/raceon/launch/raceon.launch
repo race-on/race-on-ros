@@ -10,7 +10,7 @@
         <param name="topic_name_control" value="control" />
 
         <node pkg="raceon" name="camera" type="camera.py" output="screen">
-            <param name="~publish_raw" value="true" />
+            <param name="~publish_raw" value="false" />
             <param name="~resolution/width" value="640" />
             <param name="~resolution/height" value="480" />
             <param name="~fps" value="30" />
