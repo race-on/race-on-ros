@@ -1,4 +1,6 @@
 <launch>
+    <arg name="speed" default="0"/>
+    
     <group ns="raceon">
         <param name="topic_name_camera_image" value="raspicam_node/image" />
         <param name="topic_name_camera_image_compressed" value="raspicam_node/image/compressed" />
@@ -24,7 +26,7 @@
         </node>
 
         <node pkg="raceon" name="control" type="control.py" output="log">
-            <param name="~motor_speed" value="0" />
+            <param name="~motor_speed" value="$(arg speed)" />
             <param name="~target" value="0" />
             <param name="~kp" value="10" />
         </node>
