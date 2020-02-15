@@ -5,7 +5,6 @@ from sensor_msgs.msg import Image, CompressedImage
 
 import picamera
 import signal
-import cv2
 import numpy as np
 
 stop_process = False
@@ -22,39 +21,23 @@ class Stream():
     
     def __init__(self):
         self.topic_name_camera_image = rospy.get_param("topic_name_camera_image", "camera/image")
-        self.topic_name_camera_image_compressed = rospy.get_param("topic_name_camera_image_compressed", "camera/image/compressed")
-        
-        # Tooglers
-        self.publish_raw = rospy.get_param("~publish_raw", False)
-        if self.publish_raw:
-            rospy.loginfo("Publishing raw image enabled.")
     
         # Set up ros publisher to publish on img topic, using Image message
         self.pub_img = rospy.Publisher(self.topic_name_camera_image, Image, queue_size=1)
-        self.pub_img_compressed = rospy.Publisher(self.topic_name_camera_image_compressed, CompressedImage, queue_size=1)
 
     # Called when new image is available
     def write(self, data):
-        np_arr = np.frombuffer(data, dtype=np.uint8)
-        img = np_arr.reshape((RES[1], RES[0], 3))
-        
-        # Publish compressed image
-        msg = CompressedImage()
-        msg.header.stamp = rospy.Time.now()
-        msg.format = "jpeg"
-        msg.data = np.array(cv2.imencode('.jpg', img)[1]).tobytes()
-        self.pub_img_compressed.publish(msg)
         
         # Publish raw image
-        if self.publish_raw:
-            msg = Image()
-            msg.header.stamp = rospy.Time.now()
-            msg.width = RES[0]
-            msg.height = RES[1]
-            msg.encoding = "bgr8"
-            msg.step = len(data) // RES[1]
-            msg.data = data
-            self.pub_img.publish(msg)
+        data_y = data[:RES[0]*RES[1]]
+        msg = Image()
+        msg.header.stamp = rospy.Time.now()
+        msg.width = RES[0]
+        msg.height = RES[1]
+        msg.encoding = "8UC1"
+        msg.step = len(data_y) // RES[1]
+        msg.data = data_y
+        self.pub_img.publish(msg)
         
 if __name__ == "__main__":
 
@@ -74,7 +57,7 @@ if __name__ == "__main__":
         camera.framerate = fps
         
         try:
-            camera.start_recording(Stream(), format='bgr')
+            camera.start_recording(Stream(), format='yuv')
             while not stop_process:
                 camera.wait_recording(1)
         except:

@@ -1,12 +1,16 @@
 <launch>
     <arg name="speed" default="0"/>
     
+    <arg name="kp" default="10" />
+    <arg name="ki" default="0" />
+    <arg name="kd" default="0.1" />
+    
     <group ns="raceon">
         <param name="topic_name_camera_image" value="camera/image" />
-        <param name="topic_name_camera_image_compressed" value="camera/image/compressed" />
         <param name="topic_name_camera_info" value="camera/camera_info" />
         <param name="topic_name_position_error" value="position/error" />
         <param name="topic_name_position_track" value="position/track" />
+        <param name="topic_name_position_state" value="position/state" />
         <param name="topic_name_control" value="control" />
 
         <node pkg="raceon" name="camera" type="camera.py" output="screen">
@@ -17,8 +21,7 @@
         </node>
 
         <node pkg="raceon" name="pos_estimation" type="pos_estimation.py" output="log">
-            <param name="~use_compressed_image" value="true" />
-            <param name="~scan_line" value="170" />
+            <param name="~scan_line" value="190" />
             <param name="~peak_threshold" value="170" />
             <param name="~track_width" value="500" />
             <param name="~camera_center" value="320" />
@@ -26,8 +29,11 @@
 
         <node pkg="raceon" name="control" type="control.py" output="log">
             <param name="~motor_speed" value="$(arg speed)" />
+            <param name="~steering_speed" value="160" />
             <param name="~target" value="0" />
-            <param name="~kp" value="10" />
+            <param name="~kp" value="$(arg kp)" />
+            <param name="~ki" value="$(arg ki)" />
+            <param name="~kd" value="$(arg kd)" />
         </node>
 
         <node pkg="raceon" name="actuation" type="actuation.py" output="log" />
