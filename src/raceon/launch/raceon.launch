@@ -1,5 +1,6 @@
 <launch>
     <arg name="speed" default="0"/>
+    <arg name="publish_raw" default="false"/>
     
     <group ns="raceon">
         <param name="topic_name_camera_image" value="camera/image" />
@@ -7,10 +8,11 @@
         <param name="topic_name_camera_info" value="camera/camera_info" />
         <param name="topic_name_position_error" value="position/error" />
         <param name="topic_name_position_track" value="position/track" />
+        <param name="topic_name_manual_mode" value="control/manual_mode" />
         <param name="topic_name_control" value="control" />
 
         <node pkg="raceon" name="camera" type="camera.py" output="screen">
-            <param name="~publish_raw" value="false" />
+            <param name="~publish_raw" value="$(arg publish_raw)" />
             <param name="~resolution/width" value="640" />
             <param name="~resolution/height" value="480" />
             <param name="~fps" value="30" />
