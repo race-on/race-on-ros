@@ -9,22 +9,16 @@ from geometry_msgs.msg import Pose
 from raceon.msg import TrackPosition
 
 # Dependencies for estimation
-import cv2
 import numpy as np
 from scipy.signal import find_peaks, butter, filtfilt
-from skimage.color import rgb2gray
 
 class PosEstimator():
     
     def __init__(self):
         self.topic_name_camera_image = rospy.get_param("topic_name_camera_image", "camera/image")
-        self.topic_name_camera_image_compressed = rospy.get_param("topic_name_camera_image_compressed", "camera/image/compressed")
         self.topic_name_pos_err = rospy.get_param("topic_name_position_error", "position/error")
         self.topic_name_pos_track = rospy.get_param("topic_name_position_track", "position/track")
         self.frame_name = rospy.get_param("frame_name", "camera")
-        
-        # Tooglers
-        self.use_compressed_image = rospy.get_param("~use_compressed_image", True)
         
         # Parameters for estimation
         self.scan_line = rospy.get_param("~scan_line", 170)
@@ -36,33 +30,23 @@ class PosEstimator():
     
     def start(self):
         
-        if self.use_compressed_image:
-            self.sub_camera = rospy.Subscriber(self.topic_name_camera_image_compressed, CompressedImage, self.image_compressed_callback)
-        else:
-            self.sub_camera = rospy.Subscriber(self.topic_name_camera_image, Image, self.image_callback)
+        self.sub_camera = rospy.Subscriber(self.topic_name_camera_image, Image, self.image_callback)
             
         self.pub_pos_err = rospy.Publisher(self.topic_name_pos_err, Pose, queue_size=10)
         self.pub_pos_track = rospy.Publisher(self.topic_name_pos_track, TrackPosition, queue_size=10)
         rospy.spin()
-
-    def image_compressed_callback(self, img_msg):
-        np_arr = np.frombuffer(img_msg.data, dtype=np.uint8)
-        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        self.process_image(img)
 
     def image_callback(self, img_msg):
         width = img_msg.width
         height = img_msg.height
         
         np_arr = np.frombuffer(img_msg.data, dtype=np.uint8)
-        img = np_arr.reshape((height, width, 3))
+        img = np_arr.reshape(height, width)
         self.process_image(img)
     
     def process_image(self, img):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        rospy.loginfo("Image with shape {:s} received. (max, min)=({:d}, {:d})".format(str(gray.shape), gray.min(), gray.max()))        
-        line_pos = self.camera_center - self.pos_estimate(gray)
+        rospy.loginfo("Image with shape {:s} received. (max, min)=({:d}, {:d})".format(str(img.shape), img.min(), img.max()))
+        line_pos = self.camera_center - self.pos_estimate(img)
         
         rospy.loginfo("Estimated line_pos = " + str(line_pos))
         
