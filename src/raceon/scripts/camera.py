@@ -34,7 +34,7 @@ class Stream():
         msg.header.stamp = rospy.Time.now()
         msg.width = RES[0]
         msg.height = RES[1]
-        msg.encoding = "8UC1"
+        msg.encoding = "mono8"
         msg.step = len(data_y) // RES[1]
         msg.data = data_y
         self.pub_img.publish(msg)
