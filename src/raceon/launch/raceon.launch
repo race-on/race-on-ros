@@ -9,7 +9,7 @@
     <group ns="raceon">
         <param name="topic_name_camera_image" value="camera/image" />
         <param name="topic_name_camera_info" value="camera/camera_info" />
-        <param name="topic_name_position_error" value="position/error" />
+        <param name="topic_name_position_pose" value="position/pose" />
         <param name="topic_name_position_track" value="position/track" />
         <param name="topic_name_manual_mode" value="control/manual_mode" />
         <param name="topic_name_control" value="control" />

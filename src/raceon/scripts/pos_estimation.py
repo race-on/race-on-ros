@@ -16,7 +16,7 @@ class PosEstimator():
     
     def __init__(self):
         self.topic_name_camera_image = rospy.get_param("topic_name_camera_image", "camera/image")
-        self.topic_name_pos_err = rospy.get_param("topic_name_position_error", "position/error")
+        self.topic_name_pos_pose = rospy.get_param("topic_name_position_pose", "position/pose")
         self.topic_name_pos_track = rospy.get_param("topic_name_position_track", "position/track")
         self.frame_name = rospy.get_param("frame_name", "camera")
         
@@ -32,7 +32,7 @@ class PosEstimator():
         
         self.sub_camera = rospy.Subscriber(self.topic_name_camera_image, Image, self.image_callback)
             
-        self.pub_pos_err = rospy.Publisher(self.topic_name_pos_err, Pose, queue_size=10)
+        self.pub_pos_pose = rospy.Publisher(self.topic_name_pos_pose, Pose, queue_size=10)
         self.pub_pos_track = rospy.Publisher(self.topic_name_pos_track, TrackPosition, queue_size=10)
         rospy.spin()
 
@@ -46,13 +46,13 @@ class PosEstimator():
     
     def process_image(self, img):
         rospy.loginfo("Image with shape {:s} received. (max, min)=({:d}, {:d})".format(str(img.shape), img.min(), img.max()))
-        line_pos = self.camera_center - self.pos_estimate(img)
+        line_pos = self.pos_estimate(img) - self.camera_center
         
-        rospy.loginfo("Estimated line_pos = " + str(line_pos))
+        rospy.loginfo("Estimated line_pos = {:d} (Car pos = {:d})".format(line_pos, -line_pos))
         
         pos_msg = Pose()
-        pos_msg.position.x = line_pos
-        self.pub_pos_err.publish(pos_msg)
+        pos_msg.position.x = -line_pos
+        self.pub_pos_pose.publish(pos_msg)
         
     def pos_estimate(self, I):
 

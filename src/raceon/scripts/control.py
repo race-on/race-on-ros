@@ -13,7 +13,7 @@ SERVO_MAX = 900
 class Controller():
     
     def __init__(self):
-        self.topic_name_pos_err = rospy.get_param("topic_name_position_error", "position/error")
+        self.topic_name_pos = rospy.get_param("topic_name_position_pose", "position/pose")
         self.topic_name_control = rospy.get_param("topic_name_control", "control")
         self.topic_name_manual_mode = rospy.get_param("topic_name_manual_mode", "control/manual_mode")
         
@@ -26,7 +26,7 @@ class Controller():
         self.manual_mode = False
     
     def start(self):
-        self.sub_pos_err = rospy.Subscriber(self.topic_name_pos_err, Pose, self.pos_err_callback)
+        self.sub_pos = rospy.Subscriber(self.topic_name_pos, Pose, self.pos_callback)
         self.sub_manual_mode = rospy.Subscriber(self.topic_name_manual_mode, Bool, self.manual_mode_callback)
         self.pub_control = rospy.Publisher(self.topic_name_control, AckermannDrive, queue_size=10)
         rospy.spin()
@@ -39,13 +39,13 @@ class Controller():
             control_msg.steering_angle = 0
             self.pub_control.publish(control_msg)
 
-    def pos_err_callback(self, pos_err_msg):
+    def pos_callback(self, pos_msg):
         if self.manual_mode:
             rospy.loginfo("Mannual mode is on. Not running control")
         else:
-            pos_err = self.target - pos_err_msg.position.x
+            pos_err = self.target - pos_msg.position.x
             
-            rospy.loginfo("Current error: pos_err = " + str(pos_err))
+            rospy.loginfo("Current error: pos = {:.2f}".format(pos_err))
             
             servo_pos = self.control_servo(pos_err)
             motor_speed = self.motor_speed
